@@ -2,7 +2,7 @@ import { GearApi, GearKeyring } from '@gear-js/api';
 import { readFileSync, existsSync } from 'fs';
 
 const pathToOpt = process.argv[2] || '../program/target/wasm32-unknown-unknown/release/syndote.opt.wasm';
-const nodeUrl = process.argv.length > 3 ? process.argv[3] : process.argv[2];
+const providerAddress = process.argv.length > 3 ? process.argv[3] : process.argv[2];
 
 function waitForInitialization(api, programId) {
   return new Promise((resolve) => {
@@ -64,7 +64,7 @@ async function uploadSyndote(api) {
 }
 
 const main = async () => {
-  const api = await GearApi.create();
+  const api = await GearApi.create({ providerAddress });
 
   const programId = await uploadSyndote(api);
 
