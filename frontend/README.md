@@ -28,6 +28,10 @@ In order for all features to work as expected, the node and it's runtime version
 
 In case of issues with the application, try to switch to another network or run your own local node and specify its address in the `.env` file. When applicable, make sure the smart contract(s) wasm files are uploaded and running in this network accordingly.
 
+### Set up file with metadata
+
+Copy syndote.meta.wasm file from built program to `frontend/src/assets/wasm`
+
 ### Run the app:
 
 ```sh
