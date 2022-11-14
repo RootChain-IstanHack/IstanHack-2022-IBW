@@ -1,6 +1,10 @@
 
 ## Syndote game
-Syndote contract(master contract) is the main contract that starts the game. The participants of the game are strategic contracts (player program). 
+
+Syndote is a Monopoly-like decentralized game that works completely on-chain. Players compete with each other by implementing various playing strategies uploaded as smart-contracts into the network.
+
+Syndote consists of Master contract Player contracts. Master contract is the main contract that starts and controls the game. Player contracts implement the game strategy of each participant of the game. All moves in the game take place automatically, but it is possible to jump to each one individually to analyze the player's strategy.
+
 ## Building contracts
 
 ### ⚙️ Install Rust
@@ -53,26 +57,35 @@ target
 ```
 
 ## Running the game
-To run the game you have to deploy the master contract and the contracts of players. 
-During initialization the master contract is filled with monopoly card information (cell cost, special cells: jails, lottery, etc). 
-You have to give enough gas reservation for automatic play. Before each round  the master contract checks the amount of gas and if it is not enough it will send a message to the game admin to request for another gas reservation. To make a reservation you have to send to the game contract the following message: 
+
+To run the game you have to deploy the master contract and the players contracts to the network. During initialization the master contract is filled with monopoly card information (cell cost, special cells: jails, lottery, etc).
+ 
+You have to give enough gas reservation for automatic play. Before each round the master contract checks the amount of gas and if it is not enough it will send a message to the game admin to request for another gas reservation. To make a reservation you have to send to the master contract the following message: 
+
 ```rust
 GameAction::ReserveGas
 ```
-Now one reservation is 245 000 000 000 sinces it is not yet possible to make a reservation more than the block gas limit (250 000 000 000). To run the full game make at least 5 reservations.
-Then you have to register the contracts of your players (For testing purposes you can upload one player contract four time and also reduce the number of the players in the syndote contract). 
-To register the player you have to send the following message to the syndote contract:
+Currently the single gas reservation amount can be up to 245 000 000 000 since it is not yet possible to make a reservation more than the block gas limit (250 000 000 000). To run the full game you have to make at least 5 reservations.
+
+Then you need to register the contracts of your players. For testing purposes you can upload the same player contract several times. Up to four players or less can be added in the Syndote Master contract.
+
+To register the player you have to send the following message to the Syndote contract:
+
 ```rust
 GameAction::Register {
     player: ActorId
 }
 ```
-After registering the players just start the game, sending the message:
+
+After registering players, just start the game via sending the message:
+
 ```rust
 GameAction::Play
 ```
+
 If the game is not over, make more reservations and send a message `GameAction::Play` again. 
-After the game is over, it's state become `Finished` and the admin can restart the game by starting a new player registration:
+After the game is over, it's state becomes `Finished` and the admin can restart the game by starting a new player registration:
+
 ```rust
 GameAction::StartRegistration
 ```
