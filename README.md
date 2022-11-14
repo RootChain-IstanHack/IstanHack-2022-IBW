@@ -1,4 +1,4 @@
-To test your algorithms
+## Test your algorithms
 
 ### Run gear node locally
 
