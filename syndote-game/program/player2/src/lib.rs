@@ -1,115 +1,70 @@
 #![no_std]
-use gstd::{exec, msg, prelude::*, ActorId, debug};
+use gstd::{exec, msg, prelude::*, ActorId};
 use syndote_io::*;
-//static mut MONOPOLY: ActorId = ActorId::zero();
+
 pub const COST_FOR_UPGRADE: u32 = 500;
 pub const FINE: u32 = 1_000;
+pub const MAX_GEAR_PRICE: u32 = 2500;
 
 #[gstd::async_main]
 async fn main() {
-    //let monopoly_id = unsafe { MONOPOLY };
     let monopoly_id = msg::source();
-    // assert_eq!(
-    //     msg::source(),
-    //     monopoly_id,
-    //     "Only monopoly contract can call strategic contract"
-    // );
     let mut message: YourTurn = msg::load().expect("Unable to decode struct`YourTurn`");
     let my_player = message
         .players
         .get_mut(&exec::program_id())
         .expect("Players: Cant be `None`");
+
     if my_player.in_jail {
-        debug!("Jail {:?}" , exec::program_id());
-        if my_player.balance <= FINE {
-            let reply: GameEvent = msg::send_for_reply_as(
-                monopoly_id,
-                GameAction::ThrowRoll {
-                    pay_fine: false,
-                    properties_for_sale: None,
-                },
-                0,
-            )
-            .expect("Error in sending a message `GameAction::ThrowRoll`")
-            .await
-            .expect("Unable to decode `GameEvent");
+        let reply: GameEvent = msg::send_for_reply_as(
+            monopoly_id,
+            GameAction::ThrowRoll {
+                pay_fine: false,
+                properties_for_sale: None,
+            },
+            0,
+        )
+        .expect("Error in sending a message `GameAction::ThrowRoll`")
+        .await
+        .expect("Unable to decode `GameEvent");
 
-            if let GameEvent::Jail { in_jail, position } = reply {
-                if !in_jail {
-                    my_player.position = position;
-                    debug!("Out of jail with roll {:?}" , exec::program_id());
-                } else {
-                    msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
-                    return;
-                }
+        if let GameEvent::Jail { in_jail, position } = reply {
+            if !in_jail {
+                my_player.position = position;
+            } else {
+                msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
+                return;
             }
-        } else {
-            msg::send_for_reply_as::<_, GameEvent>(
-                monopoly_id,
-                GameAction::ThrowRoll {
-                    pay_fine: true,
-                    properties_for_sale: None,
-                },
-                0,
-            )
-            .expect("Error in sending a message `GameAction::ThrowRoll`")
-            .await
-            .expect("Unable to decode `GameEvent");
-
-            msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
-            return;
         }
     }
 
     let position = my_player.position;
 
-    // debug!("BALANCE {:?}", my_player.balance);
-    let (my_cell, free_cell, gears) =
-        if let Some((account, gears, _, _)) = &message.properties[position as usize] {
+    let (my_cell, free_cell, gears, price) =
+        if let Some((account, gears, price, _)) = &message.properties[position as usize] {
             let my_cell = account == &exec::program_id();
             let free_cell = account == &ActorId::zero();
-            (my_cell, free_cell, gears)
+            (my_cell, free_cell, gears, price)
         } else {
             msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
             return;
         };
 
-    if my_cell {
-        //debug!("ADD GEAR");
-        if gears.len() < 3 { 
-            msg::send_for_reply_as::<_, GameEvent>(
-                monopoly_id,
-                GameAction::AddGear {
-                    properties_for_sale: None,
-                },
-                0,
-            )
-            .expect("Error in sending a message `GameAction::AddGear`")
-            .await
-            .expect("Unable to decode `GameEvent");
-            debug!("AddGear {:?}" , exec::program_id());
-            msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
-            return;
-        } else if gears.first().unwrap() != &Gear::Gold {
-            //Updates if gear is not Gold
-            //debug!("UPGRADE");
-            msg::send_for_reply_as::<_, GameEvent>(
-                monopoly_id,
-                GameAction::Upgrade {
-                    properties_for_sale: None,
-                },
-                0,
-            )
-            .expect("Error in sending a message `GameAction::Upgrade`")
-            .await
-            .expect("Unable to decode `GameEvent");
-            debug!("UpgradeGear {:?}" , exec::program_id());
-            msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
-            return;
-        }
+    if my_cell && gears.len() < 3 {
+        msg::send_for_reply_as::<_, GameEvent>(
+            monopoly_id,
+            GameAction::AddGear {
+                properties_for_sale: None,
+            },
+            0,
+        )
+        .expect("Error in sending a message `GameAction::AddGear`")
+        .await
+        .expect("Unable to decode `GameEvent");
+        msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
+        return;
     }
-    if free_cell {
-        //debug!("BUY CELL");
+    if free_cell && price <= &MAX_GEAR_PRICE {
         msg::send_for_reply_as::<_, GameEvent>(
             monopoly_id,
             GameAction::BuyCell {
@@ -121,7 +76,6 @@ async fn main() {
         .await
         .expect("Unable to decode `GameEvent");
     } else if !my_cell {
-        //debug!("PAY RENT");
         msg::send_for_reply_as::<_, GameEvent>(
             monopoly_id,
             GameAction::PayRent {
@@ -132,7 +86,6 @@ async fn main() {
         .expect("Error in sending a message `GameAction::PayRent`")
         .await
         .expect("Unable to decode `GameEvent");
-        debug!("PayRent {:?}" , exec::program_id());
     }
     msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
 }
