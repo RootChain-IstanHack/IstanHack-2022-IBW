@@ -412,6 +412,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "greedy_player"
+version = "0.1.0"
+dependencies = [
+ "gear-wasm-builder",
+ "gstd",
+ "parity-scale-codec",
+ "scale-info",
+ "syndote-io",
+]
+
+[[package]]
 name = "gstd"
 version = "0.1.0"
 source = "git+https://github.com/gear-tech/gear.git?rev=b34dbbf99#b34dbbf99ad4cfed7cafd2c4a9de10cd44ccbfa4"

@@ -2,5 +2,6 @@
 resolver = "2"
 members = [
     "player",
+    "greedy_player",
     "syndote",
 ]
