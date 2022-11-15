@@ -99,7 +99,7 @@ impl Game {
 
         let position = player_info.position;
 
-        let gears = if let Some((account, gears, _, _)) = &mut self.properties[position as usize] {
+        let gears = if let Some((account, gears, _, _, _)) = &mut self.properties[position as usize] {
             if account != &msg::source() {
                 //       debug!("PENALTY: TRY TO UPGRADE NOT OWN CELL");
                 player_info.penalty += 1;
@@ -156,7 +156,7 @@ impl Game {
 
         // if player did not check his balance itself
         if player_info.balance < COST_FOR_UPGRADE {
-            //       debug!("PENALTY: NOT ENOUGH BALANCE FOR UPGRADE");
+            debug!("Penalty: Not enough balance to upgrade {:?}", &self.current_player);
             player_info.penalty += 1;
             reply_strategic_error();
             return;
@@ -164,19 +164,21 @@ impl Game {
 
         let position = player_info.position;
 
-        if let Some((account, gears, price, rent)) = &mut self.properties[position as usize] {
+        if let Some((account, gears, price, rent,_)) = &mut self.properties[position as usize] {
             if account != &msg::source() {
+                debug!("Penalty: Cannot upgrade not owned cell {:?}", &self.current_player);
                 player_info.penalty += 1;
                 reply_strategic_error();
                 return;
             }
             // if nothing to upgrade
             if gears.is_empty() {
-                //        debug!("PENALTY: NOTHING TO UPGRADE");
+                debug!("Penalty: No gear to upgrade {:?}", &self.current_player);
                 player_info.penalty += 1;
                 reply_strategic_error();
                 return;
             }
+
             for gear in gears {
                 if *gear != Gear::Gold {
                     *gear = gear.upgrade();
@@ -188,11 +190,12 @@ impl Game {
                 }
             }
         } else {
+            debug!("Penalty: Cannot upgrade None cell {:?}", &self.current_player);
             player_info.penalty += 1;
             reply_strategic_error();
             return;
         };
-
+        debug!("Success: Upgraded gears {:?}", &self.current_player);
         player_info.balance -= COST_FOR_UPGRADE;
         player_info.round = self.round;
         reply_strategic_success();
@@ -227,16 +230,24 @@ impl Game {
             };
         }
 
+
         // if a player on the field that can't be sold (for example, jail)
-        if let Some((account, _, price, _)) = self.properties[position as usize].as_mut() {
+        if let Some((account, _, price, _, cell_type)) = self.properties[position as usize].as_mut() {
             if account != &mut ActorId::zero() {
-                //       debug!("PENALTY: THAT CELL IS ALREDY BOUGHT");
+                debug!("Penalty: Cell already bought {:?}", &self.current_player);
+                player_info.penalty += 1;
+                reply_strategic_error();
+                return;
+            }
+            if cell_type != CellType::Normal {
+                debug!("Penalty: Cannot buy special areas {:?}", &self.current_player);
                 player_info.penalty += 1;
                 reply_strategic_error();
                 return;
             }
             // if a player has not enough balance
             if player_info.balance < *price {
+                debug!("Penalty: Not enough balance to buy property {:?}", &self.current_player);
                 player_info.penalty += 1;
                 //      debug!("PENALTY: NOT ENOUGH BALANCE FOR BUYING");
                 reply_strategic_error();
@@ -246,10 +257,12 @@ impl Game {
             *account = msg::source();
         } else {
             player_info.penalty += 1;
-            //       debug!("PENALTY: THAT FIELD CAN'T BE SOLD");
+            debug!("Penalty: This field is not for sale {:?}", &self.current_player);
             reply_strategic_error();
             return;
         };
+
+        debug!("Success: Bought cell {:?}", &self.current_player);
         player_info.cells.insert(position);
         self.ownership[position as usize] = msg::source();
         player_info.round = self.round;
@@ -287,29 +300,31 @@ impl Game {
 
         if account == msg::source() {
             player_info.penalty += 1;
-            //   debug!("PENALTY: PAY RENT TO HIMSELF");
+            debug!("Penalty: Cannot pay rent to itself {:?}", &self.current_player);
             reply_strategic_error();
             return;
         }
 
-        let rent = if let Some((_, _, _, rent)) = self.properties[position as usize] {
+        let rent = if let Some((_, _, _, rent,_)) = self.properties[position as usize] {
             rent
         } else {
             0
         };
         if rent == 0 {
-            //    debug!("PENALTY: CELL WITH NO PROPERTIES");
+            debug!("Penalty: Cannot pay zero rent {:?}", &self.current_player);
             player_info.penalty += 1;
             reply_strategic_error();
             return;
         };
 
         if player_info.balance < rent {
-            //    debug!("PENALTY: NOT ENOUGH BALANCE TO PAY RENT");
+            debug!("Penalty: Not enough balance to pay rent {:?}", &self.current_player);
             player_info.penalty += 1;
             reply_strategic_error();
             return;
         }
+
+        debug!("Success: Paid rent {:?}", &self.current_player);
         player_info.balance -= rent;
         player_info.debt = 0;
         player_info.round = self.round;

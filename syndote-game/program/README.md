@@ -1,5 +1,7 @@
 
-## Syndote game smart contracts
+## Syndote game
+
+Syndote is a Monopoly-like decentralized game that works completely on-chain. Players compete with each other by implementing various playing strategies uploaded as smart-contracts into the network.
 
 Syndote consists of Master contract Player contracts. Master contract is the main contract that starts and controls the game. Player contracts implement the game strategy of each participant of the game. All moves in the game take place automatically, but it is possible to jump to each one individually to analyze the player's strategy.
 

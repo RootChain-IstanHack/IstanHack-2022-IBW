@@ -1,0 +1,15 @@
+player3 
+- Jail time lover
+
+player2
+    - Do not update if gear is gold
+    - in first 2 rounds buy 3 places from each corner
+    - buy if you have 
+
+Game Ideas - Notes
+ - Uses unsafe math
+ - Selling property
+ - Each turn increase 2000 tokens
+ - Implemented 
+ - game journal save to vector
+ - Changed specialcells as actorid 99

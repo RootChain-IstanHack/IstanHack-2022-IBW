@@ -8,19 +8,19 @@ fn game() {
     system.init_logger();
     let player_1 = Program::from_file(
         &system,
-        "../target/wasm32-unknown-unknown/release/player.wasm",
+        "../target/wasm32-unknown-unknown/release/player2.wasm",
     );
     let player_2 = Program::from_file(
         &system,
-        "../target/wasm32-unknown-unknown/release/player.wasm",
+        "../target/wasm32-unknown-unknown/release/player2.wasm",
     );
     let player_3 = Program::from_file(
         &system,
-        "../target/wasm32-unknown-unknown/release/player.wasm",
+        "../target/wasm32-unknown-unknown/release/player2.wasm",
     );
     let player_4 = Program::from_file(
         &system,
-        "../target/wasm32-unknown-unknown/release/player.wasm",
+        "../target/wasm32-unknown-unknown/release/player2.wasm",
     );
     let game = Program::current(&system);
 
@@ -45,4 +45,6 @@ fn game() {
         .main_failed());
 
     game.send(10, GameAction::Play);
+
+
 }

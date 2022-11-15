@@ -1,5 +1,5 @@
 #![no_std]
-use gstd::{exec, msg, prelude::*, ActorId, ReservationId};
+use gstd::{exec, msg, prelude::*, ActorId, ReservationId,debug};
 pub const NUMBER_OF_CELLS: u8 = 40;
 pub const NUMBER_OF_PLAYERS: u8 = 4;
 pub const JAIL_POSITION: u8 = 10;
@@ -10,6 +10,13 @@ pub const PENALTY: u8 = 5;
 pub const INITIAL_BALANCE: u32 = 15_000;
 pub const NEW_CIRCLE: u32 = 2_000;
 pub const WAIT_DURATION: u32 = 5;
+
+//edited
+pub const JACKPOT_EARN: u32 = 2000;
+pub const MYSTERY_VALUE: u32 = 1000;
+pub const PUNISHMENT_FEE: u32 = 5000;
+pub const TELEPORT_FEE: u32 = 250;
+
 pub mod strategic_actions;
 pub mod utils;
 use syndote_io::*;
@@ -29,7 +36,7 @@ pub struct Game {
     current_player: ActorId,
     current_step: u64,
     // mapping from cells to built properties,
-    properties: Vec<Option<(ActorId, Gears, u32, u32)>>,
+    properties: Vec<Option<(ActorId, Gears, u32, u32, CellType)>>,
     // mapping from cells to accounts who have properties on it
     ownership: Vec<ActorId>,
     game_status: GameStatus,
@@ -75,6 +82,7 @@ impl Game {
                 ..Default::default()
             },
         );
+        debug!("Player: {:?} Registered", player.as_ref());
         self.players_queue.push(*player);
         if self.players_queue.len() == NUMBER_OF_PLAYERS as usize {
             self.game_status = GameStatus::Play;
@@ -129,6 +137,7 @@ impl Game {
                     0,
                 )
                 .expect("Error in sending a reply `GameEvent::GameFinished`");
+                debug!("WINNER {:?}", self.winner);
                 break;
             }
             self.round = self.round.wrapping_add(1);
@@ -160,13 +169,87 @@ impl Game {
                 // if he misses the rent
                 let account = self.ownership[position as usize];
                 if account != player && account != ActorId::zero() {
-                    if let Some((_, _, _, rent)) = self.properties[position as usize] {
+                    if let Some((_, _, _, rent, _)) = self.properties[position as usize] {
                         player_info.debt = rent;
                     }
                 }
                 player_info.position = position;
-                player_info.in_jail = position == JAIL_POSITION;
+                //player_info.in_jail = position == JAIL_POSITION;
                 state.players.insert(player, player_info.clone());
+
+                //edited
+                if let Some((_, _, _, _, cell_type)) = &self.properties[position as usize] {
+                    if cell_type == &CellType::Normal {
+                        let reply = take_your_turn(&player, &state).await;
+        
+                        if reply.is_err() {
+                            player_info.penalty = PENALTY;
+                            debug!("ERROR Normal");
+                        }
+                    }
+                    else {
+                        match cell_type {
+                            CellType::Jail => {
+                                let reply = take_your_turn(&player, &state).await;
+        
+                                if reply.is_err() {
+                                    player_info.penalty = PENALTY;
+                                    debug!("ERROR Jail");
+                                }
+                            },
+                            CellType::GotoJail => {
+                                player_info.in_jail = true;
+                                player_info.position = 10; //teleports to jail
+                                state.players.insert(player, player_info.clone());
+                                debug!("GoToJail {:?}", player);
+                            },
+                            CellType::Genesis => { //position 0, player earns token
+                                player_info.balance += NEW_CIRCLE;
+                                state.players.insert(player, player_info.clone());
+                                debug!("Genesis {:?}", player);
+                            },
+                            CellType::Jackpot => { //jackpot, player earns token
+                                player_info.balance += JACKPOT_EARN;
+                                state.players.insert(player, player_info.clone());
+                                debug!("Jackpot {:?}", player);
+                            },
+                            CellType::Punishment => { //punishment, player loses token. If player does not have enough balance, player teleports to jail.
+                                if player_info.balance > PUNISHMENT_FEE { 
+                                    player_info.balance -= PUNISHMENT_FEE;
+                                }
+                                else { //todo: sell property to pay punishment
+                                    player_info.in_jail = true;
+                                    player_info.position = 10; //teleports to jail
+                                }
+                                state.players.insert(player, player_info.clone());
+                                debug!("Punishment {:?}", player);
+                            },
+                            CellType::Mystery => { //Mystery, player eiter does nothing or rolls a dice to win balance or lose balance.
+                                /*let reply = take_your_turn(&player, &state).await;
+    
+                                if reply.is_err() {
+                                    player_info.penalty = PENALTY;
+                                    debug!("ERROR Mystery");
+                                }*/
+                            },
+                            CellType::Teleport => { //Teleport, player either does nothing or teleports to the next teleport area.
+                                /*let reply = take_your_turn(&player, &state).await;
+    
+                                if reply.is_err() {
+                                    player_info.penalty = PENALTY;
+                                    debug!("ERROR Teleport");
+                                }*/
+                            },
+                            CellType::Normal => {
+                                debug!("Normal! {:?}", player);
+                            },
+                        }
+                    }    
+                }
+                
+
+
+                /* 
                 match position {
                     0 => {
                         player_info.balance += NEW_CIRCLE;
@@ -184,6 +267,7 @@ impl Game {
                         }
                     }
                 }
+                */
 
                 msg::send(
                     self.admin,
@@ -214,19 +298,37 @@ async fn main() {
         GameAction::ThrowRoll {
             pay_fine,
             properties_for_sale,
-        } => game.throw_roll(pay_fine, properties_for_sale),
+        } =>{ 
+            game.throw_roll(pay_fine, properties_for_sale);
+            debug!("Action: throw_roll {:?}", game.current_player);
+        },
         GameAction::AddGear {
             properties_for_sale,
-        } => game.add_gear(properties_for_sale),
+        } => {
+            game.add_gear(properties_for_sale);
+            debug!("Action: add_gear {:?}", game.current_player);
+        },
         GameAction::Upgrade {
             properties_for_sale,
-        } => game.upgrade(properties_for_sale),
+        } => {
+            game.upgrade(properties_for_sale);
+            debug!("Action: upgrade {:?}", game.current_player);
+        },
         GameAction::BuyCell {
             properties_for_sale,
-        } => game.buy_cell(properties_for_sale),
+        } => {
+            game.buy_cell(properties_for_sale);
+            debug!("Action: buy_cell {:?}", game.current_player);
+        },
         GameAction::PayRent {
             properties_for_sale,
-        } => game.pay_rent(properties_for_sale),
+        } => {
+            game.pay_rent(properties_for_sale);
+-            debug!("Action: pay_rent {:?}", game.current_player);
+        },
+        _=> {
+            debug!("Unprocessed command {:?}", game.current_player);
+        }
     }
 }
 

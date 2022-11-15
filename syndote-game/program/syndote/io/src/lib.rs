@@ -6,7 +6,7 @@ pub type Gears = Vec<Gear>;
 #[derive(Encode, Decode, TypeInfo)]
 pub struct YourTurn {
     pub players: BTreeMap<ActorId, PlayerInfo>,
-    pub properties: Vec<Option<(ActorId, Gears, Price, Rent)>>,
+    pub properties: Vec<Option<(ActorId, Gears, u32, u32)>>
 }
 
 #[derive(Encode, Decode, TypeInfo)]
@@ -46,7 +46,7 @@ pub enum GameEvent {
     StrategicSuccess,
     Step {
         players: BTreeMap<ActorId, PlayerInfo>,
-        properties: Vec<Option<(ActorId, Gears, Price, Rent)>>,
+        properties: Vec<Option<(ActorId, Gears, Price, Rent, CellType)>>,
         current_player: ActorId,
         ownership: Vec<ActorId>,
         current_step: u64,
@@ -98,4 +98,16 @@ impl Default for GameStatus {
     fn default() -> Self {
         Self::Registration
     }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, TypeInfo, Decode, Encode)]
+pub enum CellType { //edited
+    Normal,
+    Genesis,
+    GotoJail,
+    Jail,
+    Jackpot,
+    Punishment,
+    Mystery,
+    Teleport,
 }
