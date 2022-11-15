@@ -1,0 +1,11 @@
+{
+  "name": "init",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@gear-js/api": "^0.27.3",
+    "@polkadot/api": "^9.8.1"
+  }
+}
