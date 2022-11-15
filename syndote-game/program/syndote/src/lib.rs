@@ -3,7 +3,6 @@ use gstd::{exec, msg, prelude::*, ActorId, ReservationId,debug};
 pub const NUMBER_OF_CELLS: u8 = 40;
 pub const NUMBER_OF_PLAYERS: u8 = 4;
 pub const JAIL_POSITION: u8 = 10;
-pub const LOTTERY_POSITION: u8 = 20;
 pub const COST_FOR_UPGRADE: u32 = 500;
 pub const FINE: u32 = 1_000;
 pub const PENALTY: u8 = 5;
@@ -12,9 +11,9 @@ pub const NEW_CIRCLE: u32 = 2_000;
 pub const WAIT_DURATION: u32 = 5;
 
 //edited
-pub const JACKPOT_EARN: u32 = 2000;
+pub const JACKPOT_EARN: u32 = 1000;
 pub const MYSTERY_VALUE: u32 = 1000;
-pub const PUNISHMENT_FEE: u32 = 5000;
+pub const PUNISHMENT_FEE: u32 = 1000;
 pub const TELEPORT_FEE: u32 = 250;
 
 pub mod strategic_actions;
@@ -324,7 +323,7 @@ async fn main() {
             properties_for_sale,
         } => {
             game.pay_rent(properties_for_sale);
--            debug!("Action: pay_rent {:?}", game.current_player);
+            debug!("Action: pay_rent {:?}", game.current_player);
         },
         _=> {
             debug!("Unprocessed command {:?}", game.current_player);

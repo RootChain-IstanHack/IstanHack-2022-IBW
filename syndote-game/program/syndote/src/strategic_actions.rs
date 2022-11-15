@@ -239,7 +239,7 @@ impl Game {
                 reply_strategic_error();
                 return;
             }
-            if cell_type != CellType::Normal {
+            if cell_type != &CellType::Normal {
                 debug!("Penalty: Cannot buy special areas {:?}", &self.current_player);
                 player_info.penalty += 1;
                 reply_strategic_error();
