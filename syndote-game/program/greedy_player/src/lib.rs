@@ -4,7 +4,7 @@ use syndote_io::*;
 
 pub const COST_FOR_UPGRADE: u32 = 500;
 pub const FINE: u32 = 1_000;
-pub const MAX_GEAR_PRICE: u32 = 300;
+pub const MAX_GEAR_PRICE: u32 = 2500;
 
 #[gstd::async_main]
 async fn main() {
