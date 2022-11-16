@@ -33,6 +33,11 @@ import { ReactComponent as GasSVG } from 'assets/images/logos/gas.svg';
 import { ReactComponent as GearSVG } from 'assets/images/logos/gear.svg';
 import { ReactComponent as HackSVG } from 'assets/images/logos/hack.svg';
 import { ReactComponent as VaraSVG } from 'assets/images/logos/vara.svg';
+import { ReactComponent as PunishmentSVG } from 'assets/images/logos/punishment.svg';
+import { ReactComponent as WizardSVG } from 'assets/images/logos/wizard.svg';
+import { ReactComponent as TeleportSVG } from 'assets/images/logos/teleport.svg';
+import { ReactComponent as JackpotSVG } from 'assets/images/logos/jackpot.svg';
+
 import { Hex } from '@gear-js/api';
 import { PlayerType } from 'types';
 
@@ -48,7 +53,10 @@ enum LocalStorage {
 }
 
 const fields = [
-  { Image: GearSVG, type: 'none' },
+  {
+    Image: GearSVG,
+    type: 'cell',
+  },
   {
     Image: NodleSVG,
     type: 'cell',
@@ -62,7 +70,7 @@ const fields = [
     },
   },
   {
-    Image: FireSVG,
+    Image: PunishmentSVG,
     type: 'none',
   },
   {
@@ -77,7 +85,7 @@ const fields = [
       cell: 1050,
     },
   },
-  { Image: ErrorSVG, type: 'none' },
+  { Image: WizardSVG, type: 'none' },
   {
     Image: PolkadotJsSVG,
     type: 'cell',
@@ -102,7 +110,18 @@ const fields = [
       cell: 1500,
     },
   },
-  { Image: FireSVG, type: 'none' },
+  {
+    Image: TeleportSVG,
+    type: 'cell',
+    values: {
+      heading: 'ChaosDAO',
+      baseRent: 160,
+      bronze: 160,
+      silver: 160,
+      gold: 160,
+      cell: 1600,
+    },
+  },
   {
     Image: i,
     type: 'cell',
@@ -127,7 +146,7 @@ const fields = [
       cell: 1700,
     },
   },
-  { Image: GasSVG, type: 'none' },
+  { Image: HackSVG, type: 'none' },
   {
     Image: InterlaySVG,
     type: 'cell',
@@ -188,7 +207,7 @@ const fields = [
       cell: 2300,
     },
   },
-  { Image: FireSVG, type: 'none' },
+  { Image: PunishmentSVG, type: 'none' },
   {
     Image: LitentrySVG,
     type: 'cell',
@@ -238,7 +257,7 @@ const fields = [
       cell: 3000,
     },
   },
-  { Image: FireSVG, type: 'none' },
+  { Image: JackpotSVG, type: 'none' },
   {
     Image: RmrkSVG,
     type: 'cell',
@@ -323,7 +342,7 @@ const fields = [
       cell: 3400,
     },
   },
-  { Image: HackSVG, type: 'none' },
+  { Image: GasSVG, type: 'none' },
   {
     Image: PhalaSVG,
     type: 'cell',
@@ -348,7 +367,7 @@ const fields = [
       cell: 4050,
     },
   },
-  { Image: FireSVG, type: 'none' },
+  { Image: TeleportSVG, type: 'none' },
   {
     Image: MoonbeamSVG,
     type: 'cell',
@@ -373,7 +392,7 @@ const fields = [
       cell: 4150,
     },
   },
-  { Image: ErrorSVG, type: 'none' },
+  { Image: WizardSVG, type: 'none' },
   {
     Image: KusamaSVG,
     type: 'cell',
@@ -386,7 +405,7 @@ const fields = [
       cell: 4200,
     },
   },
-  { Image: FireSVG, type: 'none' },
+  { Image: PunishmentSVG, type: 'none' },
   {
     Image: PolkadotSVG,
     type: 'cell',
