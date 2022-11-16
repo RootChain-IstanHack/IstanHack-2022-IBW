@@ -117,7 +117,7 @@ async fn main() {
         .expect("Unable to decode `GameEvent");
     } else if !my_cell {
         //debug!("PAY RENT");
-        let properties_for_sale = if rent > &my_player.balance {
+        let properties_for_sale = if rent >= &my_player.balance {
             let player_properties: Vec<u8> = message.properties.iter()
                 .enumerate()
                 .filter_map(|(index, property)| {
