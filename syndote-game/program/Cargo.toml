@@ -6,4 +6,5 @@ members = [
     "player3",
     "player4",
     "syndote",
+    "fungible-token",
 ]
