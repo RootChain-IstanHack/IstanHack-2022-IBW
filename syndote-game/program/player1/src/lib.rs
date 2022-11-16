@@ -62,11 +62,11 @@ async fn main() {
     let position = my_player.position;
 
     // debug!("BALANCE {:?}", my_player.balance);
-    let (my_cell, free_cell, gears) =
-        if let Some((account, gears, _, _)) = &message.properties[position as usize] {
+    let (my_cell, free_cell, gears, rent) =
+        if let Some((account, gears, _, rent)) = &message.properties[position as usize] {
             let my_cell = account == &exec::program_id();
             let free_cell = account == &ActorId::zero();
-            (my_cell, free_cell, gears)
+            (my_cell, free_cell, gears, rent)
         } else {
             msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
             return;
@@ -117,10 +117,32 @@ async fn main() {
         .expect("Unable to decode `GameEvent");
     } else if !my_cell {
         //debug!("PAY RENT");
+        let properties_for_sale = if rent > &my_player.balance {
+            let player_properties: Vec<u8> = message.properties.iter()
+                .enumerate()
+                .filter_map(|(index, property)| {
+                    if let Some((actor_id, _, _, _)) = property {
+                        if actor_id == &exec::program_id() {
+                            return Some((index - 1).try_into().unwrap())
+                        }
+                    }
+                    None
+                }).collect();
+            if player_properties.is_empty() {
+                None
+            } else {
+                Some(vec![player_properties[0]])
+            }
+        } else {
+            None
+        };
+
+        gstd::debug!("Properties for sale: {:?}", properties_for_sale);
+
         msg::send_for_reply_as::<_, GameEvent>(
             monopoly_id,
             GameAction::PayRent {
-                properties_for_sale: None,
+                properties_for_sale,
             },
             0,
         )
