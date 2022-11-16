@@ -88,6 +88,7 @@ pub fn bankrupt_and_penalty(
         if player_info.debt > 0 {
             for cell in &player_info.cells.clone() {
                 if player_info.balance >= player_info.debt {
+                    debug!("| Player {:?} | Penalty: Debt decreased from balance automatically" , player.as_ref()[0]);
                     player_info.balance -= player_info.debt;
                     player_info.debt = 0;
                     player_info.penalty += 1;
@@ -95,6 +96,7 @@ pub fn bankrupt_and_penalty(
                     break;
                 }
                 if let Some((_, _, price, _, _)) = &properties[*cell as usize] {
+                    debug!("| Player {:?} | Debt: Sold property to admin half-price" , player.as_ref()[0]);
                     player_info.balance += price / 2;
                     player_info.cells.remove(cell);
                     ownership[*cell as usize] = *admin;
@@ -105,7 +107,8 @@ pub fn bankrupt_and_penalty(
     }
 
     for (player, mut player_info) in players.clone() {
-        if player_info.penalty >= PENALTY || player_info.debt > 0 {
+        if player_info.penalty >= PENALTY || player_info.debt > 0 && !player_info.lost { // edited fixed: Kicked players still iterate over the list added "&& !player_info.lost"
+            debug!("| Player {:?} | Kicked out of game" , player.as_ref()[0]);
             player_info.lost = true;
             players_queue.retain(|&p| p != player);
             for cell in &player_info.cells.clone() {

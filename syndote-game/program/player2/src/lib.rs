@@ -6,6 +6,8 @@ pub const COST_FOR_UPGRADE: u32 = 500;
 pub const FINE: u32 = 1_000;
 pub const MAX_GEAR_PRICE: u32 = 2500;
 
+//Greedy player
+
 #[gstd::async_main]
 async fn main() {
     let monopoly_id = msg::source();
@@ -40,15 +42,21 @@ async fn main() {
 
     let position = my_player.position;
 
-    let (my_cell, free_cell, gears, price) =
-        if let Some((account, gears, price, _)) = &message.properties[position as usize] {
+    let (my_cell, free_cell, gears,price, special_cell) =
+        if let Some((account, gears, price, rent)) = &message.properties[position as usize] {
             let my_cell = account == &exec::program_id();
             let free_cell = account == &ActorId::zero();
-            (my_cell, free_cell, gears, price)
+            if rent == &0 { (my_cell, free_cell, gears ,price, true)}
+            else { (my_cell, free_cell, gears, price, false)}
         } else {
             msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
             return;
         };
+
+    if special_cell {
+        msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
+        return;
+    }
 
     if my_cell && gears.len() < 3 {
         msg::send_for_reply_as::<_, GameEvent>(
@@ -64,7 +72,7 @@ async fn main() {
         msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
         return;
     }
-    if free_cell && price <= &MAX_GEAR_PRICE {
+    if free_cell && price <= &MAX_GEAR_PRICE && !special_cell{
         msg::send_for_reply_as::<_, GameEvent>(
             monopoly_id,
             GameAction::BuyCell {
@@ -75,7 +83,7 @@ async fn main() {
         .expect("Error in sending a message `GameAction::BuyCell`")
         .await
         .expect("Unable to decode `GameEvent");
-    } else if !my_cell {
+    } else if !my_cell && !special_cell {
         msg::send_for_reply_as::<_, GameEvent>(
             monopoly_id,
             GameAction::PayRent {

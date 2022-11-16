@@ -62,16 +62,23 @@ async fn main() {
     let position = my_player.position;
 
     // debug!("BALANCE {:?}", my_player.balance);
-    let (my_cell, free_cell, gears) =
-        if let Some((account, gears, _, _)) = &message.properties[position as usize] {
+    let (my_cell, free_cell, gears, special_cell) =
+        if let Some((account, gears, _, rent)) = &message.properties[position as usize] {
             let my_cell = account == &exec::program_id();
             let free_cell = account == &ActorId::zero();
-            (my_cell, free_cell, gears)
+            if rent == &0 { (my_cell, free_cell, gears, true)}
+            else { (my_cell, free_cell, gears, false)}
+
         } else {
             msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
             return;
         };
 
+    if special_cell {
+        msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
+        return;
+    }
+    
     if my_cell {
         //debug!("ADD GEAR");
         if gears.len() < 3 {
@@ -103,7 +110,7 @@ async fn main() {
             return;
         }
     }
-    if free_cell {
+    if free_cell && !special_cell{
         //debug!("BUY CELL");
         msg::send_for_reply_as::<_, GameEvent>(
             monopoly_id,

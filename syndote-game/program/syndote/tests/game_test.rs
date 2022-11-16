@@ -8,7 +8,7 @@ fn game() {
     system.init_logger();
     let player_1 = Program::from_file(
         &system,
-        "../target/wasm32-unknown-unknown/release/player2.wasm",
+        "../target/wasm32-unknown-unknown/release/player1.wasm",
     );
     let player_2 = Program::from_file(
         &system,
@@ -16,11 +16,11 @@ fn game() {
     );
     let player_3 = Program::from_file(
         &system,
-        "../target/wasm32-unknown-unknown/release/player2.wasm",
+        "../target/wasm32-unknown-unknown/release/player3.wasm",
     );
     let player_4 = Program::from_file(
         &system,
-        "../target/wasm32-unknown-unknown/release/player2.wasm",
+        "../target/wasm32-unknown-unknown/release/player4.wasm",
     );
     let game = Program::current(&system);
 

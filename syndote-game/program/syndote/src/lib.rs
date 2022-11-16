@@ -12,7 +12,7 @@ pub const WAIT_DURATION: u32 = 5;
 
 //edited
 pub const JACKPOT_EARN: u32 = 1000;
-pub const MYSTERY_VALUE: u32 = 1000;
+pub const MYSTERY_VALUE: u32 = 500;
 pub const PUNISHMENT_FEE: u32 = 1000;
 pub const TELEPORT_FEE: u32 = 250;
 
@@ -81,7 +81,7 @@ impl Game {
                 ..Default::default()
             },
         );
-        debug!("Player: {:?} Registered", player.as_ref());
+        debug!("Player: {:?} Registered", player.as_ref()[0]);
         self.players_queue.push(*player);
         if self.players_queue.len() == NUMBER_OF_PLAYERS as usize {
             self.game_status = GameStatus::Play;
@@ -136,11 +136,23 @@ impl Game {
                     0,
                 )
                 .expect("Error in sending a reply `GameEvent::GameFinished`");
-                debug!("WINNER {:?}", self.winner);
+                //edited
+                //printing winner player and its final balance
+                debug!("WINNER Player {:?} !!!", self.winner.as_ref()[0]);
+                let winner_info = self
+                .players
+                .get_mut(&self.winner)
+                .expect("Cant be None: Get Player");
+
+                debug!("BALANCE {:?}", winner_info.balance);
                 break;
             }
             self.round = self.round.wrapping_add(1);
             for player in self.players_queue.clone() {
+                
+                let current_player_info = self.players.get_mut(&player).expect("Cant be None: Get Player"); //edited
+                if current_player_info.lost {continue;} //if player has lost then continue with next player
+
                 self.current_player = player;
                 self.current_step += 1;
                 // we save the state before the player's step in case
@@ -190,38 +202,38 @@ impl Game {
                         match cell_type {
                             CellType::Jail => {
                                 let reply = take_your_turn(&player, &state).await;
-        
+                                debug!("In jail | Player {:?}", player.as_ref()[0]);
                                 if reply.is_err() {
                                     player_info.penalty = PENALTY;
-                                    debug!("ERROR Jail");
+                                    debug!("ERROR Jail {:?}" , player.as_ref()[0]);
                                 }
                             },
                             CellType::GotoJail => {
                                 player_info.in_jail = true;
                                 player_info.position = 10; //teleports to jail
                                 state.players.insert(player, player_info.clone());
-                                debug!("GoToJail {:?}", player);
+                                debug!("Stepped into GoToJail cell | Player {:?}", player.as_ref()[0]);
                             },
                             CellType::Genesis => { //position 0, player earns token
                                 player_info.balance += NEW_CIRCLE;
                                 state.players.insert(player, player_info.clone());
-                                debug!("Genesis {:?}", player);
+                                debug!("Stepped into Genesis cell | Player {:?}", player.as_ref()[0]);
                             },
                             CellType::Jackpot => { //jackpot, player earns token
                                 player_info.balance += JACKPOT_EARN;
                                 state.players.insert(player, player_info.clone());
-                                debug!("Jackpot {:?}", player);
+                                debug!("Stepped into Jackpot cell | Player {:?}", player.as_ref()[0]);
                             },
                             CellType::Punishment => { //punishment, player loses token. If player does not have enough balance, player teleports to jail.
                                 if player_info.balance > PUNISHMENT_FEE { 
                                     player_info.balance -= PUNISHMENT_FEE;
                                 }
-                                else { //todo: sell property to pay punishment
+                                else {
                                     player_info.in_jail = true;
                                     player_info.position = 10; //teleports to jail
                                 }
                                 state.players.insert(player, player_info.clone());
-                                debug!("Punishment {:?}", player);
+                                debug!("Stepped into Punishment cell | Player {:?}", player.as_ref()[0]);
                             },
                             CellType::Mystery => { //Mystery, player eiter does nothing or rolls a dice to win balance or lose balance.
                                 /*let reply = take_your_turn(&player, &state).await;
@@ -240,14 +252,12 @@ impl Game {
                                 }*/
                             },
                             CellType::Normal => {
-                                debug!("Normal! {:?}", player);
+                                debug!("Not Normal! {:?}", player.as_ref()[0]);
                             },
                         }
                     }    
                 }
                 
-
-
                 /* 
                 match position {
                     0 => {
@@ -299,34 +309,50 @@ async fn main() {
             properties_for_sale,
         } =>{ 
             game.throw_roll(pay_fine, properties_for_sale);
-            debug!("Action: throw_roll {:?}", game.current_player);
+            let current_player_position = game.players.get_mut(&game.current_player).expect("Cant be None: Get Player").position;
+            debug!("| Player {:?} | Position {:?} | Game Step {:?} | Action: throw_roll" , game.current_player.as_ref()[0], current_player_position, &game.current_step);
         },
         GameAction::AddGear {
             properties_for_sale,
         } => {
             game.add_gear(properties_for_sale);
-            debug!("Action: add_gear {:?}", game.current_player);
+            let current_player_position = game.players.get_mut(&game.current_player).expect("Cant be None: Get Player").position;
+            debug!("| Player {:?} | Position {:?} | Game Step {:?} | Action: add_gear" , game.current_player.as_ref()[0], current_player_position, &game.current_step);
         },
         GameAction::Upgrade {
             properties_for_sale,
         } => {
             game.upgrade(properties_for_sale);
-            debug!("Action: upgrade {:?}", game.current_player);
+            let current_player_position = game.players.get_mut(&game.current_player).expect("Cant be None: Get Player").position;
+            debug!("| Player {:?} | Position {:?} | Game Step {:?} | Action: upgrade" , game.current_player.as_ref()[0], current_player_position, &game.current_step);
         },
         GameAction::BuyCell {
             properties_for_sale,
         } => {
             game.buy_cell(properties_for_sale);
-            debug!("Action: buy_cell {:?}", game.current_player);
+            let current_player_position = game.players.get_mut(&game.current_player).expect("Cant be None: Get Player").position;
+            debug!("| Player {:?} | Position {:?} | Game Step {:?} | Action: buy_cell" , game.current_player.as_ref()[0], current_player_position, &game.current_step);
         },
         GameAction::PayRent {
             properties_for_sale,
         } => {
             game.pay_rent(properties_for_sale);
-            debug!("Action: pay_rent {:?}", game.current_player);
+            let current_player_position = game.players.get_mut(&game.current_player).expect("Cant be None: Get Player").position;
+            debug!("| Player {:?} | Position {:?} | Game Step {:?} | Action: pay_rent" , game.current_player.as_ref()[0], current_player_position, &game.current_step);
+        },
+        GameAction::Mystery => {
+            game.mystery();
+            let current_player_position = game.players.get_mut(&game.current_player).expect("Cant be None: Get Player").position;
+            debug!("| Player {:?} | Position {:?} | Game Step {:?} | Action: mystery" , game.current_player.as_ref()[0], current_player_position, &game.current_step);
+        },
+        GameAction::Teleport => {
+            game.teleport();
+            let current_player_position = game.players.get_mut(&game.current_player).expect("Cant be None: Get Player").position;
+            debug!("| Player {:?} | Position {:?} | Game Step {:?} | Action: teleport" , game.current_player.as_ref()[0], current_player_position, &game.current_step);
         },
         _=> {
-            debug!("Unprocessed command {:?}", game.current_player);
+            let current_player_position = game.players.get_mut(&game.current_player).expect("Cant be None: Get Player").position;
+            debug!("| Player {:?} | Position {:?} | Game Step {:?} | Action: pay_rent" , game.current_player.as_ref()[0], current_player_position, &game.current_step);
         }
     }
 }

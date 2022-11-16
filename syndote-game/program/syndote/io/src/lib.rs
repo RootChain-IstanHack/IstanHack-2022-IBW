@@ -33,6 +33,8 @@ pub enum GameAction {
     PayRent {
         properties_for_sale: Option<Vec<u8>>,
     },
+    Mystery,
+    Teleport,
 }
 
 #[derive(Encode, Decode, TypeInfo)]
