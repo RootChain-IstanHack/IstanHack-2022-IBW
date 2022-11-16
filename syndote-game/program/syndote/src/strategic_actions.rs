@@ -100,7 +100,7 @@ impl Game {
 
         let position = player_info.position;
 
-        let gears = if let Some((account, gears, _, _, _)) = &mut self.properties[position as usize] {
+        let gears = if let Some((account, gears, _, _, _)) = &mut self.properties[(position - 1) as usize] {
             if account != &msg::source() {
                 debug!("Penalty: Cannot add gear to not owned cell | Player {:?}", &self.current_player.as_ref()[0]);
                 player_info.penalty += 1;
@@ -122,7 +122,7 @@ impl Game {
             reply_strategic_error();
             return;
         }
-        debug!("Success: Added new gear | Player {:?}", &self.current_player.as_ref()[0]);
+        debug!("AddGear: Added new gear | Player {:?}", &self.current_player.as_ref()[0]);
         gears.push(Gear::Bronze);
         player_info.balance -= COST_FOR_UPGRADE;
         player_info.round = self.round;
@@ -166,7 +166,7 @@ impl Game {
 
         let position = player_info.position;
 
-        if let Some((account, gears, price, rent,_)) = &mut self.properties[position as usize] {
+        if let Some((account, gears, price, rent,_)) = &mut self.properties[(position - 1) as usize] {
             if account != &msg::source() {
                 debug!("Penalty: Cannot upgrade not owned cell | Player {:?}", &self.current_player.as_ref()[0]);
                 player_info.penalty += 1;
@@ -197,7 +197,7 @@ impl Game {
             reply_strategic_error();
             return;
         };
-        debug!("Success: Upgraded gears | Player {:?}", &self.current_player.as_ref()[0]);
+        debug!("UpgradeGear: Upgraded gears | Player {:?}", &self.current_player.as_ref()[0]);
         player_info.balance -= COST_FOR_UPGRADE;
         player_info.round = self.round;
         reply_strategic_success();
@@ -234,15 +234,17 @@ impl Game {
 
 
         // if a player on the field that can't be sold (for example, jail)
-        if let Some((account, _, price, _, cell_type)) = self.properties[position as usize].as_mut() {
+        if let Some((account, _, price, _, cell_type)) = self.properties[(position - 1) as usize].as_mut() {
             if account != &mut ActorId::zero() {
                 debug!("Penalty: Cell already bought | Player {:?}", &self.current_player.as_ref()[0]);
+
                 player_info.penalty += 1;
                 reply_strategic_error();
                 return;
             }
             if cell_type != &CellType::Normal {
                 debug!("Penalty: Cannot buy special areas | Player {:?}", &self.current_player.as_ref()[0]);
+
                 player_info.penalty += 1;
                 reply_strategic_error();
                 return;
@@ -250,6 +252,7 @@ impl Game {
             // if a player has not enough balance
             if player_info.balance < *price {
                 debug!("Penalty: Not enough balance to buy property | Player {:?}", &self.current_player.as_ref()[0]);
+
                 player_info.penalty += 1;
                 //      debug!("PENALTY: NOT ENOUGH BALANCE FOR BUYING");
                 reply_strategic_error();
@@ -260,13 +263,15 @@ impl Game {
         } else {
             player_info.penalty += 1;
             debug!("Penalty: This field is not for sale | Player {:?}", &self.current_player.as_ref()[0]);
+            debug!(player_info.position);
             reply_strategic_error();
             return;
         };
 
-        debug!("Success: Bought cell | Player {:?}", &self.current_player.as_ref()[0]);
+        debug!("BuyCell: Bought cell | Player {:?}", &self.current_player.as_ref()[0]);
+        debug!(player_info.position);
         player_info.cells.insert(position);
-        self.ownership[position as usize] = msg::source();
+        self.ownership[(position - 1) as usize] = msg::source();
         player_info.round = self.round;
         reply_strategic_success();
     }
@@ -298,7 +303,7 @@ impl Game {
         }
 
         let position = player_info.position;
-        let account = self.ownership[position as usize];
+        let account = self.ownership[(position - 1) as usize];
 
         if account == msg::source() {
             player_info.penalty += 1;
@@ -307,7 +312,7 @@ impl Game {
             return;
         }
 
-        let rent = if let Some((_, _, _, rent,_)) = self.properties[position as usize] {
+        let rent = if let Some((_, _, _, rent,_)) = self.properties[(position - 1) as usize] {
             rent
         } else {
             0
@@ -326,7 +331,7 @@ impl Game {
             return;
         }
 
-        debug!("Success: Paid rent | Player {:?}", &self.current_player.as_ref()[0]);
+        debug!("Rent: Paid rent | Player {:?}", &self.current_player.as_ref()[0]);
         player_info.balance -= rent;
         player_info.debt = 0;
         player_info.round = self.round;
@@ -338,11 +343,76 @@ impl Game {
 
     //edited
     pub fn teleport(&mut self) {
+        let player_info = match get_player_info(&self.current_player, &mut self.players, self.round)
+        {
+            Ok(player_info) => player_info,
+            Err(_) => {
+                reply_strategic_error();
+                return;
+            }
+        };
+
+        //If player is in the mystery cell
+        let(_, _, price, _, cell_type) = self.properties[player_info.position as usize].clone().unwrap();
+        if cell_type != CellType::Teleport {
+            debug!("Penalty: Player not in teleport cell | Player {:?}", &self.current_player.as_ref()[0]);
+            player_info.penalty += 1;
+            reply_strategic_error();
+            return;
+        }
+
+        if player_info.balance <= price {
+            debug!("Penalty: Not enough balance for teleport | Player {:?}", &self.current_player.as_ref()[0]);
+            player_info.penalty += 1;
+            reply_strategic_error();
+            return;
+        }
+        for i in 0..self.properties.clone().len() { //finding the next teleport point
+            if i == player_info.position.into() { continue; } //skip current teleport point
+            let(_, _, _, _, cell_type) = self.properties[i].clone().unwrap();
+            if cell_type == CellType::Teleport {
+                player_info.position = i as u8; //player teleports to next teleport cell
+            }
+        }
+        debug!("Teleport: Player teleported | Player {:?}", &self.current_player.as_ref()[0]);
+        reply_strategic_success();
 
     }
 
     pub fn mystery(&mut self) {
+        self.only_player();
+        let player_info = match get_player_info(&self.current_player, &mut self.players, self.round)
+        {
+            Ok(player_info) => player_info,
+            Err(_) => {
+                reply_strategic_error();
+                return;
+            }
+        };
 
+        //If player is in the mystery cell
+        let(_, _, price, _, cell_type) = self.properties[player_info.position as usize].clone().unwrap();
+        if cell_type != CellType::Mystery {
+            debug!("Penalty: Player not in mystery cell | Player {:?}", &self.current_player.as_ref()[0]);
+            debug!(player_info.position);
+            player_info.penalty += 1;
+            reply_strategic_error();
+            return;
+        }
+
+        let (r1, r2) = get_rolls();
+        if r1 + r2 <= 7 {
+            debug!("Mystery: Player has WON the Mystery! | Player {:?}", &self.current_player.as_ref()[0]);
+            player_info.balance += price;
+            player_info.round = self.round;
+            reply_strategic_success();
+        }
+        else {
+            debug!("Mystery: Player has lost the Mystery | Player {:?}", &self.current_player.as_ref()[0]);
+            player_info.debt += price;
+            player_info.round = self.round;
+            reply_strategic_error();
+        }
     }
 
 }

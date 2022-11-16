@@ -63,7 +63,6 @@ pub fn sell_property(
     }
     Ok(())
 }
-
 static mut SEED: u64 = 0;
 pub fn get_rolls() -> (u8, u8) {
     let seed = unsafe {
@@ -107,7 +106,7 @@ pub fn bankrupt_and_penalty(
     }
 
     for (player, mut player_info) in players.clone() {
-        if player_info.penalty >= PENALTY || player_info.debt > 0 && !player_info.lost { // edited fixed: Kicked players still iterate over the list added "&& !player_info.lost"
+        if (player_info.penalty >= PENALTY || player_info.debt > 0) && !player_info.lost { // edited fixed: Kicked players still iterate over the list added "&& !player_info.lost"
             debug!("| Player {:?} | Kicked out of game" , player.as_ref()[0]);
             player_info.lost = true;
             players_queue.retain(|&p| p != player);
@@ -124,21 +123,29 @@ pub fn init_properties(
     properties: &mut Vec<Option<(ActorId, Gears, Price, Rent, CellType)>>,
     ownership: &mut Vec<ActorId>,
 ) {
+    //60 -> Genesis cell
+    //61 -> Jail cell
+    //62 -> GoToJail cell
+    //63 -> Punishment cell
+    //64 -> Jackpot cell
+    //65 -> Teleport cell
+    //66 -> Mystery cell
+    
     //edited
     // 0
-    properties.push(Some((ActorId::zero(), Vec::new(), NEW_CIRCLE, 0, CellType::Genesis))); //genesis
+    properties.push(Some((ActorId::from(60), Vec::new(), NEW_CIRCLE, 0, CellType::Genesis))); //genesis
 
     // 1
     properties.push(Some((ActorId::zero(), Vec::new(), 1_000, 100, CellType::Normal)));
 
     // 2
-    properties.push(Some((ActorId::from(99), Vec::new(), PUNISHMENT_FEE, 0, CellType::Punishment))); //punishment
+    properties.push(Some((ActorId::from(63), Vec::new(), PUNISHMENT_FEE, 0, CellType::Punishment))); //punishment
 
     // 3
     properties.push(Some((ActorId::zero(), Vec::new(), 1_050, 105, CellType::Normal)));
 
     // 4
-    properties.push(Some((ActorId::zero(), Vec::new(), MYSTERY_VALUE, 0, CellType::Mystery))); //mystery
+    properties.push(Some((ActorId::from(66), Vec::new(), MYSTERY_VALUE, 0, CellType::Mystery))); //mystery
 
     // 5
     properties.push(Some((ActorId::zero(), Vec::new(), 1_100, 110, CellType::Normal)));
@@ -146,7 +153,7 @@ pub fn init_properties(
     properties.push(Some((ActorId::zero(), Vec::new(), 1_500, 150, CellType::Normal)));
 
     // 7
-    properties.push(Some((ActorId::zero(), Vec::new(), TELEPORT_FEE, 0, CellType::Teleport))); //teleport
+    properties.push(Some((ActorId::from(65), Vec::new(), TELEPORT_FEE, 0, CellType::Teleport))); //teleport
 
     // 8
     properties.push(Some((ActorId::zero(), Vec::new(), 1_550, 155, CellType::Normal)));
@@ -154,7 +161,7 @@ pub fn init_properties(
     properties.push(Some((ActorId::zero(), Vec::new(), 1_700, 170, CellType::Normal)));
 
     // 10
-    properties.push(Some((ActorId::zero(), Vec::new(), 0, 0, CellType::Jail))); //jail
+    properties.push(Some((ActorId::from(61), Vec::new(), 0, 0, CellType::Jail))); //jail
     
     // 11
     properties.push(Some((ActorId::zero(), Vec::new(), 2_000, 200, CellType::Normal)));
@@ -168,7 +175,7 @@ pub fn init_properties(
     properties.push(Some((ActorId::zero(), Vec::new(), 2_300, 230, CellType::Normal)));
 
     // 16
-    properties.push(Some((ActorId::zero(), Vec::new(), PUNISHMENT_FEE, 0, CellType::Punishment))); //punishment
+    properties.push(Some((ActorId::from(63), Vec::new(), PUNISHMENT_FEE, 0, CellType::Punishment))); //punishment
 
     // 17
     properties.push(Some((ActorId::zero(), Vec::new(), 2_400, 240, CellType::Normal)));
@@ -178,7 +185,7 @@ pub fn init_properties(
     properties.push(Some((ActorId::zero(), Vec::new(), 2_500, 250, CellType::Normal)));
 
     // 20
-    properties.push(Some((ActorId::zero(), Vec::new(), JACKPOT_EARN, 0, CellType::Jackpot))); //jackpot
+    properties.push(Some((ActorId::from(64), Vec::new(), JACKPOT_EARN, 0, CellType::Jackpot))); //jackpot
 
     // 21
     properties.push(Some((ActorId::zero(), Vec::new(), 3_000, 300, CellType::Normal)));
@@ -200,7 +207,7 @@ pub fn init_properties(
     properties.push(Some((ActorId::zero(), Vec::new(), 3_400, 340, CellType::Normal)));
 
     // 30
-    properties.push(Some((ActorId::zero(), Vec::new(), 0, 0, CellType::GotoJail))); //Go to jail
+    properties.push(Some((ActorId::from(62), Vec::new(), 0, 0, CellType::GotoJail))); //Go to jail
 
     // 31
     properties.push(Some((ActorId::zero(), Vec::new(), 4_000, 400, CellType::Normal)));
@@ -208,7 +215,7 @@ pub fn init_properties(
     properties.push(Some((ActorId::zero(), Vec::new(), 4_050, 405, CellType::Normal)));
 
     // 33
-    properties.push(Some((ActorId::zero(), Vec::new(), TELEPORT_FEE, 0, CellType::Teleport))); //teleport
+    properties.push(Some((ActorId::from(65), Vec::new(), TELEPORT_FEE, 0, CellType::Teleport))); //teleport
 
     // 34
     properties.push(Some((ActorId::zero(), Vec::new(), 4_100, 410, CellType::Normal)));
@@ -216,13 +223,13 @@ pub fn init_properties(
     properties.push(Some((ActorId::zero(), Vec::new(), 4_150, 415, CellType::Normal)));
 
     // 36
-    properties.push(Some((ActorId::zero(), Vec::new(), MYSTERY_VALUE, 0, CellType::Mystery))); //mystery
+    properties.push(Some((ActorId::from(66), Vec::new(), MYSTERY_VALUE, 0, CellType::Mystery))); //mystery
 
     // 37
     properties.push(Some((ActorId::zero(), Vec::new(), 4_200, 420, CellType::Normal)));
 
     // 38
-    properties.push(Some((ActorId::zero(), Vec::new(), PUNISHMENT_FEE, 0, CellType::Punishment))); //Punishment
+    properties.push(Some((ActorId::from(63), Vec::new(), PUNISHMENT_FEE, 0, CellType::Punishment))); //Punishment
 
     // 39
     properties.push(Some((ActorId::zero(), Vec::new(), 4_500, 450, CellType::Normal)));

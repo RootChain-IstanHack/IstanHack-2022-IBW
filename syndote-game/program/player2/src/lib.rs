@@ -53,6 +53,7 @@ async fn main() {
             return;
         };
 
+
     if special_cell {
         msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
         return;
@@ -72,7 +73,7 @@ async fn main() {
         msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
         return;
     }
-    if free_cell && price <= &MAX_GEAR_PRICE && !special_cell{
+    if free_cell && price <= &MAX_GEAR_PRICE {
         msg::send_for_reply_as::<_, GameEvent>(
             monopoly_id,
             GameAction::BuyCell {
@@ -83,7 +84,7 @@ async fn main() {
         .expect("Error in sending a message `GameAction::BuyCell`")
         .await
         .expect("Unable to decode `GameEvent");
-    } else if !my_cell && !special_cell {
+    } else if !my_cell {
         let properties_for_sale = if rent >= &my_player.balance {
             let player_properties: Vec<u8> = message.properties.iter()
                 .enumerate()
@@ -104,7 +105,8 @@ async fn main() {
             None
         };
 
-        gstd::debug!("Properties for sale: {:?}", properties_for_sale);
+
+        //gstd::debug!("Properties for sale: {:?}", properties_for_sale);
 
         msg::send_for_reply_as::<_, GameEvent>(
             monopoly_id,

@@ -4,6 +4,7 @@ use syndote_io::*;
 
 #[test]
 fn game() {
+    
     let system = System::new();
     system.init_logger();
     let player_1 = Program::from_file(

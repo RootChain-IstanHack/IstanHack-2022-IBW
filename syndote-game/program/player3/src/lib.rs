@@ -38,7 +38,7 @@ async fn main() {
             .await
             .expect("Unable to decode `GameEvent");
 
-            if let GameEvent::Jail { in_jail, position } = reply {
+            if let GameEvent::Jail { in_jail, position } = reply { //bug
                 if !in_jail {
                     my_player.position = position;
                 } else {
@@ -67,25 +67,46 @@ async fn main() {
     let position = my_player.position;
 
     // debug!("BALANCE {:?}", my_player.balance);
-    let (my_cell, free_cell, gears, special_cell) =
-        if let Some((account, gears, _, rent)) = &message.properties[position as usize] {
+    let (account, my_cell, free_cell, gears,price, special_cell) =
+        if let Some((account, gears, price, rent)) = &message.properties[position as usize] {
             let my_cell = account == &exec::program_id();
             let free_cell = account == &ActorId::zero();
-            if rent == &0 { (my_cell, free_cell, gears, true)}
-            else { (my_cell, free_cell, gears, false)}
+            if rent == &0 { (account, my_cell, free_cell, gears,price, true)}
+            else { (account, my_cell, free_cell, gears,price, false)}
         } else {
             msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
             return;
         };
-        
+
     if special_cell {
+        if account == &ActorId::from(65) { //teleport cell
+            msg::send_for_reply_as::<_, GameEvent>(
+                monopoly_id,
+                GameAction::Teleport,
+                0,
+            )
+            .expect("Error in sending a message `GameAction::AddGear`")
+            .await
+            .expect("Unable to decode `GameEvent");
+        }
+        else if account == &ActorId::from(66) { //Mystery cell
+            msg::send_for_reply_as::<_, GameEvent>(
+                monopoly_id,
+                GameAction::Mystery,
+                0,
+            )
+            .expect("Error in sending a message `GameAction::AddGear`")
+            .await
+            .expect("Unable to decode `GameEvent");
+
+        }
         msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
         return;
     }
 
     if my_cell {
         //debug!("ADD GEAR");
-        if gears.len() < 3 {
+        if gears.len() < 3  && my_player.balance > COST_FOR_UPGRADE {
             msg::send_for_reply_as::<_, GameEvent>(
                 monopoly_id,
                 GameAction::AddGear {
@@ -98,7 +119,7 @@ async fn main() {
             .expect("Unable to decode `GameEvent");
             msg::reply("", 0).expect("Error in sending a reply to monopoly contract");
             return;
-        } else {
+        } else if my_player.balance > COST_FOR_UPGRADE{
             //debug!("UPGRADE");
             msg::send_for_reply_as::<_, GameEvent>(
                 monopoly_id,
@@ -114,7 +135,7 @@ async fn main() {
             return;
         }
     }
-    if free_cell && !special_cell{
+    if free_cell && my_player.balance > price.clone(){
         //debug!("BUY CELL");
         msg::send_for_reply_as::<_, GameEvent>(
             monopoly_id,
@@ -127,7 +148,6 @@ async fn main() {
         .await
         .expect("Unable to decode `GameEvent");
     } else if !my_cell {
-        //debug!("PAY RENT");
         msg::send_for_reply_as::<_, GameEvent>(
             monopoly_id,
             GameAction::PayRent {

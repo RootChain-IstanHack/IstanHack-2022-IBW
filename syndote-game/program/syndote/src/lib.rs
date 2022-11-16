@@ -126,7 +126,7 @@ impl Game {
                 &mut self.ownership,
             );
 
-            if self.players_queue.len() <= 1 {
+            if self.players_queue.len() == 1 { //edited
                 self.winner = self.players_queue[0];
                 self.game_status = GameStatus::Finished;
                 msg::reply(
@@ -185,7 +185,7 @@ impl Game {
                     }
                 }
                 player_info.position = position;
-                //player_info.in_jail = position == JAIL_POSITION;
+                player_info.in_jail = position == JAIL_POSITION;
                 state.players.insert(player, player_info.clone());
 
                 //edited
@@ -202,7 +202,7 @@ impl Game {
                         match cell_type {
                             CellType::Jail => {
                                 let reply = take_your_turn(&player, &state).await;
-                                debug!("In jail | Player {:?}", player.as_ref()[0]);
+                                //debug!("In jail | Player {:?}", player.as_ref()[0]);
                                 if reply.is_err() {
                                     player_info.penalty = PENALTY;
                                     debug!("ERROR Jail {:?}" , player.as_ref()[0]);
@@ -212,17 +212,18 @@ impl Game {
                                 player_info.in_jail = true;
                                 player_info.position = 10; //teleports to jail
                                 state.players.insert(player, player_info.clone());
-                                debug!("Stepped into GoToJail cell | Player {:?}", player.as_ref()[0]);
+                                //debug!("Stepped into GoToJail cell | Player {:?}", player.as_ref()[0]);
                             },
                             CellType::Genesis => { //position 0, player earns token
                                 player_info.balance += NEW_CIRCLE;
                                 state.players.insert(player, player_info.clone());
-                                debug!("Stepped into Genesis cell | Player {:?}", player.as_ref()[0]);
+                                //debug!("Stepped into Genesis cell | Player {:?}", player.as_ref()[0]);
+                
                             },
                             CellType::Jackpot => { //jackpot, player earns token
                                 player_info.balance += JACKPOT_EARN;
                                 state.players.insert(player, player_info.clone());
-                                debug!("Stepped into Jackpot cell | Player {:?}", player.as_ref()[0]);
+                                //debug!("Stepped into Jackpot cell | Player {:?}", player.as_ref()[0]);
                             },
                             CellType::Punishment => { //punishment, player loses token. If player does not have enough balance, player teleports to jail.
                                 if player_info.balance > PUNISHMENT_FEE { 
@@ -233,23 +234,28 @@ impl Game {
                                     player_info.position = 10; //teleports to jail
                                 }
                                 state.players.insert(player, player_info.clone());
-                                debug!("Stepped into Punishment cell | Player {:?}", player.as_ref()[0]);
+                                //debug!("Stepped into Punishment cell | Player {:?}", player.as_ref()[0]);
                             },
                             CellType::Mystery => { //Mystery, player eiter does nothing or rolls a dice to win balance or lose balance.
-                                /*let reply = take_your_turn(&player, &state).await;
-    
+                                let reply = take_your_turn(&player, &state).await;
+
+                                //debug!("Stepped into Mystery cell | Player {:?}", player.as_ref()[0]);
+
                                 if reply.is_err() {
                                     player_info.penalty = PENALTY;
                                     debug!("ERROR Mystery");
-                                }*/
+                                }
+
                             },
                             CellType::Teleport => { //Teleport, player either does nothing or teleports to the next teleport area.
-                                /*let reply = take_your_turn(&player, &state).await;
-    
+                                let reply = take_your_turn(&player, &state).await;
+
+                                //debug!("Stepped into Teleport cell | Player {:?}", player.as_ref()[0]);
+
                                 if reply.is_err() {
                                     player_info.penalty = PENALTY;
                                     debug!("ERROR Teleport");
-                                }*/
+                                }
                             },
                             CellType::Normal => {
                                 debug!("Not Normal! {:?}", player.as_ref()[0]);
@@ -352,7 +358,7 @@ async fn main() {
         },
         _=> {
             let current_player_position = game.players.get_mut(&game.current_player).expect("Cant be None: Get Player").position;
-            debug!("| Player {:?} | Position {:?} | Game Step {:?} | Action: pay_rent" , game.current_player.as_ref()[0], current_player_position, &game.current_step);
+            debug!("| Player {:?} | Position {:?} | Game Step {:?} | Action: anormal!" , game.current_player.as_ref()[0], current_player_position, &game.current_step);
         }
     }
 }
